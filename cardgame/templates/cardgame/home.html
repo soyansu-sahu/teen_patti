@@ -1,0 +1,12 @@
+{% extends 'cardgame/base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% load static %}
+<h1>Welcome to the Casino!</h1>
+<p>Feel the excitement of the games.</p>
+
+<img src="{% static 'cardgame/images/bg_main.jpg' %}" alt="Casino Photo" class="img-fluid" />
+<p>Ready to play? <a href="{% url 'signup' %}">Sign up here</a>.</p>
+{% endblock %}

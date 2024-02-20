@@ -1,0 +1,148 @@
+
+{% extends 'cardgame/base.html' %}
+
+{% block content %}
+    <h2>Play Game</h2>
+    <p>Welcome, {{ player.user.username }}!</p>
+    <p>Your wallet balance: ${{ player.wallet }}</p>
+
+    <div id="game-elements">
+        <p>It's {{ game.current_player.user.username }}'s turn.</p>
+        
+        <button onclick="seeAction()">See</button>
+        <button onclick="raiseAction()">Raise</button>
+        <button onclick="foldAction()">Fold</button>
+        <button onclick="showdownAction()">Showdown</button>
+        <button onclick="initiateShowdown()">Showdown</button>
+
+        <p>Minimum bet: 10</p>
+        <p>Maximum bet: {{ game.current_player.wallet }}</p>
+        <p>Betting increments: 5</p>
+
+        <!-- Display winner and winning hand after the final betting round -->
+        {% if game.winner %}
+            <p>Winner: {{ game.winner.user.username }}</p>
+            <p>Winning Hand: {{ game.winning_hand }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function seeAction() {
+            // AJAX request to see_action view
+            $.ajax({
+                type: 'POST',
+                url: '{% url "see_action" %}',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (response) {
+                    // Handle success response (update UI, messages, etc.)
+                    console.log(response);
+                },
+                error: function (error) {
+                    // Handle error (display error messages, etc.)
+                    console.error(error);
+                },
+            });
+        }
+
+        function raiseAction() {
+            // Get raise amount from user input
+            var raiseAmount = prompt('Enter raise amount:');
+            if (raiseAmount !== null && !isNaN(raiseAmount)) {
+                // AJAX request to raise_action view
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "raise_action" %}',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}',
+                        raise_amount: raiseAmount,
+                    },
+                    success: function (response) {
+                        // Handle success response (update UI, messages, etc.)
+                        console.log(response);
+                    },
+                    error: function (error) {
+                        // Handle error (display error messages, etc.)
+                        console.error(error);
+                    },
+                });
+            }
+        }
+
+        function foldAction() {
+            // AJAX request to fold_action view
+            $.ajax({
+                type: 'POST',
+                url: '{% url "fold_action" %}',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (response) {
+                    // Handle success response (update UI, messages, etc.)
+                    console.log(response);
+                },
+                error: function (error) {
+                    // Handle error (display error messages, etc.)
+                    console.error(error);
+                },
+            });
+        }
+
+        function showdownAction() {
+            // AJAX request to showdown_action view
+            $.ajax({
+                type: 'POST',
+                url: '{% url "showdown_action" %}',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                },
+                success: function (response) {
+                    // Handle success response (update UI, messages, etc.)
+                    console.log(response);
+                },
+                error: function (error) {
+                    // Handle error (display error messages, etc.)
+                    console.error(error);
+                },
+            });
+        }
+        function switchTurn() {
+            // AJAX request to switch_turn view
+            $.ajax({
+                type: 'GET',
+                url: '{% url "switch_turn" game.id %}',
+                success: function (response) {
+                    // Handle success response (update UI, messages, etc.)
+                    console.log(response);
+                    // After switching turns, reload the page to reflect changes
+                    location.reload();
+                },
+                error: function (error) {
+                    // Handle error (display error messages, etc.)
+                    console.error(error);
+                },
+            });
+        }
+
+        function initiateShowdown() {
+            // AJAX request to showdown view
+            $.ajax({
+                type: 'GET',
+                url: '{% url "showdown" game.id %}',
+                success: function (response) {
+                    // Handle success response (update UI, messages, etc.)
+                    console.log(response);
+                    // After showdown, reload the page to reflect changes
+                    location.reload();
+                },
+                error: function (error) {
+                    // Handle error (display error messages, etc.)
+                    console.error(error);
+                },
+            });
+        }
+
+        // Add more JavaScript functions as needed
+    </script>
+{% endblock %}
