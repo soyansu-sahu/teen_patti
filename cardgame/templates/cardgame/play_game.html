@@ -1,28 +1,44 @@
-
 {% extends 'cardgame/base.html' %}
 
+{% block title %}Play Game{% endblock %}
+
 {% block content %}
-    <h2>Play Game</h2>
-    <p>Welcome, {{ player.user.username }}!</p>
-    <p>Your wallet balance: ${{ player.wallet }}</p>
+    <div class="container mt-5">
+        <h2 class="mb-4">Play Game</h2>
+        <p class="lead">Welcome, {{ player.user.username }}!</p>
+        <p class="lead">Your wallet balance: ${{ player.wallet }}</p>
 
-    <div id="game-elements">
-        <p>It's {{ game.current_player.user.username }}'s turn.</p>
-        
-        <button onclick="seeAction()">See</button>
-        <button onclick="raiseAction()">Raise</button>
-        <button onclick="foldAction()">Fold</button>
-        <button onclick="showdownAction()">Showdown</button>
-        <button onclick="initiateShowdown()">Showdown</button>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4 class="mb-3">Game Status</h4>
+                <p>It's {{ game.current_player.user.username }}'s turn.</p>
 
-        <p>Minimum bet: 10</p>
-        <p>Maximum bet: {{ game.current_player.wallet }}</p>
-        <p>Betting increments: 5</p>
+                <div id="game-elements" class="mt-4">
+                    <button class="btn btn-primary" onclick="seeAction()">See</button>
+                    <button class="btn btn-success" onclick="raiseAction()">Raise</button>
+                    <button class="btn btn-danger" onclick="foldAction()">Fold</button>
+                    <button class="btn btn-warning" onclick="showdownAction()">Showdown</button>
+                    <input type="hidden" id="game_id" value="{{ game.id }}">
+
+                </div>
+
+                <p class="mt-4">Minimum bet: $10</p>
+                <p>Maximum bet: ${{ game.current_player.wallet }}</p>
+                <p>Betting increments: $5</p>
+            </div>
+
+            <div class="col-md-6">
+                <!-- Add any additional information or game elements here -->
+            </div>
+        </div>
 
         <!-- Display winner and winning hand after the final betting round -->
         {% if game.winner %}
-            <p>Winner: {{ game.winner.user.username }}</p>
-            <p>Winning Hand: {{ game.winning_hand }}</p>
+            <div class="mt-5">
+                <h4>Game Result</h4>
+                <p>Winner: {{ game.winner.user.username }}</p>
+                <p>Winning Hand: {{ game.winning_hand }}</p>
+            </div>
         {% endif %}
     </div>
 
@@ -47,34 +63,36 @@
         }
 
         function raiseAction() {
-            // Get raise amount from user input
+            var gameId = parseInt(document.getElementById('game_id').value);
             var raiseAmount = prompt('Enter raise amount:');
-            if (raiseAmount !== null && !isNaN(raiseAmount)) {
-                // AJAX request to raise_action view
-                $.ajax({
-                    type: 'POST',
-                    url: '{% url "raise_action" %}',
-                    data: {
-                        csrfmiddlewaretoken: '{{ csrf_token }}',
-                        raise_amount: raiseAmount,
-                    },
-                    success: function (response) {
-                        // Handle success response (update UI, messages, etc.)
-                        console.log(response);
-                    },
-                    error: function (error) {
-                        // Handle error (display error messages, etc.)
-                        console.error(error);
-                    },
-                });
-            }
+
+        if (raiseAmount !== null && !isNaN(raiseAmount)) {
+            // AJAX request to raise_action view with game_id
+            $.ajax({
+                type: 'POST',
+                url: '{% url "raise_action" game_id=gameId %}',  // Construct the URL with game_id
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    raise_amount: raiseAmount,
+                },
+                success: function (response) {
+                    // Handle success response (update UI, messages, etc.)
+                    console.log(response);
+                },
+                error: function (error) {
+                    // Handle error (display error messages, etc.)
+                    console.error(error);
+                },
+            });
         }
+    }
 
         function foldAction() {
+            var gameId = parseInt(document.getElementById('game_id').value);
             // AJAX request to fold_action view
             $.ajax({
                 type: 'POST',
-                url: '{% url "fold_action" %}',
+                url: '{% url "fold_action" game_id=gameId %}',
                 data: {
                     csrfmiddlewaretoken: '{{ csrf_token }}',
                 },
@@ -90,10 +108,11 @@
         }
 
         function showdownAction() {
+            var gameId = parseInt(document.getElementById('game_id').value);
             // AJAX request to showdown_action view
             $.ajax({
                 type: 'POST',
-                url: '{% url "showdown_action" %}',
+                url: '{% url "showdown_action" game_id=gameId %}',
                 data: {
                     csrfmiddlewaretoken: '{{ csrf_token }}',
                 },
@@ -108,6 +127,7 @@
             });
         }
         function switchTurn() {
+            var gameId = parseInt(document.getElementById('game_id').value);
             // AJAX request to switch_turn view
             $.ajax({
                 type: 'GET',
@@ -126,6 +146,7 @@
         }
 
         function initiateShowdown() {
+            var gameId = parseInt(document.getElementById('game_id').value);
             // AJAX request to showdown view
             $.ajax({
                 type: 'GET',
@@ -142,7 +163,5 @@
                 },
             });
         }
-
-        // Add more JavaScript functions as needed
     </script>
 {% endblock %}

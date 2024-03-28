@@ -56,7 +56,7 @@ def user_login(request):
         if user is not None:
             # Log in the user
             login(request, user)
-            return redirect('play_game')
+            return render(request, 'cardgame/play_game.html')
         else:
             return render(request, 'cardgame/login.html', {'error': 'Invalid login credentials.'})
 
@@ -86,11 +86,11 @@ def play_game(request):
         action = request.POST.get('action')
 
         if action == 'see':
-            see_action(request, game, player)
+            see_action(request, game.id, player)
         elif action == 'raise':
-            raise_action(request, game, player)
+            raise_action(request, game.id)
         elif action == 'fold':
-            fold_action(request, game, player)
+            fold_action(request, game.id, player)
         elif action == 'showdown':
             showdown(request, game, player)
 
@@ -230,22 +230,22 @@ def is_trail(player):
 def is_pure_sequence(cards):
     # Sort cards by rank
     sorted_cards = sorted(cards, key=lambda card: card.rank)
-
+    first_suit = sorted_cards[0].suit
     # Check if cards form a Pure Sequence
     for i in range(1, len(sorted_cards)):
-        if sorted_cards[i].rank - sorted_cards[i - 1].rank != 1 or sorted_cards[i].suit != sorted_cards[i - 1].suit:
+        if sorted_cards[i].rank - sorted_cards[i - 1].rank != 1 or sorted_cards[i].suit != first_suit:
             return False
-
     return True
 
 def is_sequence(player):
     # Implement logic to check for Sequence
     # Return True if the player has a Sequence, False otherwise
     # Example: Check if the cards are in consecutive order
-    cards = player.cards.all()
-    sorted_cards = sorted(cards, key=lambda card: card.rank)
-    
-    return all(sorted_cards[i + 1].rank - sorted_cards[i].rank == 1 for i in range(len(sorted_cards) - 1))
+    cards = sorted(player.cards.all(), key=lambda card: card.rank)
+    for i in range(len(cards) - 1):
+        if cards[i + 1].rank - cards[i].rank != 1:
+            return False
+    return True
 
 def is_flush(player):
     # Implement logic to check for Flush
@@ -259,10 +259,15 @@ def is_pair(player):
     # Return True if the player has a Pair, False otherwise
     # Example: Check if there are two cards with the same rank
     cards = player.cards.all()
-    return len(set(card.rank for card in cards)) == 2
+    rank_counts = {}
+    for card in cards:
+        rank_counts[card.rank] = rank_counts.get(card.rank, 0) + 1
+    return any(count == 2 for count in rank_counts.values())
 
-
-def see_action(request, game, player):
+@login_required
+def see_action(request, game_id, player):
+    game = Game.objects.get(pk=game_id)
+    player = request.user.player
     # Implement logic for "See" action
     # Example: Player matches the current bet in the pot
     if player.wallet >= game.pot:
@@ -274,7 +279,11 @@ def see_action(request, game, player):
     else:
         return JsonResponse({'status': 'error', 'message': 'Not enough money to see the bet.'})
 
-def raise_action(request, game, player):
+@login_required
+def raise_action(request, game_id):
+    game = Game.objects.get(pk=game_id)
+    player = request.user.player
+
     # Implement logic for "Raise" action
     # Example: Player increases the current bet
     raise_amount = int(request.POST.get('raise_amount', 0))
@@ -289,14 +298,21 @@ def raise_action(request, game, player):
 
     return JsonResponse({'status': 'success', 'message': f'You have raised the bet by {raise_amount}.', 'pot': game.pot, 'wallet': player.wallet})
 
-def fold_action(request, game, player):
-    # Implement logic for "Fold" action
-    # Example: Player forfeits their cards and any money already in the pot
-    player.wallet += game.pot  # Return the money in the pot to the player
-    player.save()
 
-    game.current_player = None
-    game.save()
+def fold_action(request, game_id):
+    game = Game.objects.get(pk=game_id)
+    player = request.user.player
+    try:
+        # Add the money in the pot back to the player's wallet
+        player.wallet += game.pot
+        player.save()
 
-    return JsonResponse({'status': 'success', 'message': 'You have folded.', 'wallet': player.wallet})
+        # Set the current player to None to indicate fold
+        game.current_player = None
+        game.save()
 
+        # Return a success response with a message and updated wallet amount
+        return JsonResponse({'status': 'success', 'message': 'You have folded.', 'wallet': player.wallet})
+    except Exception as e:
+        # Handle any errors that occur during the fold action
+        return JsonResponse({'status': 'error', 'message': 'An error occurred while processing your fold request.'})

@@ -11,7 +11,7 @@ urlpatterns = [
     path('switch_turn/<int:game_id>/',switch_turn, name='switch_turn'),
     path('showdown/<int:game_id>/',showdown, name='showdown'),
     path('see_action/',see_action, name='see_action'),
-    path('raise_action/',raise_action, name='raise_action'),
+    path('raise_action/<int:game_id>/', raise_action, name='raise_action'),
     path('fold_action/',fold_action, name='fold_action'),
     path('showdown_action/',showdown, name='showdown_action'),
     
